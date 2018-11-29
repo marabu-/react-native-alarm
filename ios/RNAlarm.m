@@ -1,5 +1,10 @@
-
 #import "RNAlarm.h"
+#if __has_include("RCTUtils.h")
+#import "RCTUtils.h"
+#else
+#import <React/RCTUtils.h>
+#endif
+
 #import <AudioToolbox/AudioToolbox.h>
 #import <AVFoundation/AVFoundation.h>
 
@@ -24,19 +29,6 @@
     }
 }
 
-//- (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler{
-//    completionHandler(UNNotificationPresentationOptionAlert | UNNotificationPresentationOptionSound);
-//    AVAudioSession *session = [AVAudioSession sharedInstance];
-//    [session setCategory:AVAudioSessionCategoryPlayback error:nil];
-//    [session setActive:YES error:nil];
-//
-//    NSURL *fileURL = [NSURL fileURLWithPath:@"/Library/Ringtones/Constellation.m4r"];
-//    audioPlay = [[AVAudioPlayer alloc] initWithContentsOfURL:fileURL error:nil];
-//    audioPlay.numberOfLoops = -1;
-//    [audioPlay play];
-
-    
-//}
 -(void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler{
     
      completionHandler(UNNotificationPresentationOptionAlert | UNNotificationPresentationOptionSound);
@@ -49,11 +41,9 @@
     
     NSString *categoryIdentifier = response.notification.request.content.categoryIdentifier;
     NSString *identifier1 = [categoryIdentifier stringByAppendingString:@"1"];
-    NSString *identifier2 = [categoryIdentifier stringByAppendingString:@"2"];
-    NSString *identifier3 = [categoryIdentifier stringByAppendingString:@"3"];
     
-    [center removePendingNotificationRequestsWithIdentifiers:@[identifier1,identifier2,identifier3]];
-    [center removeDeliveredNotificationsWithIdentifiers:@[identifier1,identifier2,identifier3]];
+    [center removePendingNotificationRequestsWithIdentifiers:@[identifier1]];
+    [center removeDeliveredNotificationsWithIdentifiers:@[identifier1]];
     //[audioPlay stop];
     //[center removeAllPendingNotificationRequests];
     //}
@@ -72,12 +62,12 @@
 {
     return dispatch_get_main_queue();
 }
-RCT_EXPORT_MODULE()
+RCT_EXPORT_MODULE();
 
 // Thanks, AshFurrow
 static const unsigned componentFlags = (NSCalendarUnitYear| NSCalendarUnitMonth | NSCalendarUnitDay | NSCalendarUnitWeekday |  NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond | NSCalendarUnitWeekday | NSCalendarUnitWeekdayOrdinal);
 
-RCT_EXPORT_METHOD(playTipSound: (NSString*) fileName){
+RCT_EXPORT_METHOD(playTipSound: (NSString*)fileName){
     
     NSString *soundPath = [[NSBundle mainBundle] pathForResource:fileName ofType:@"m4r"];
     SystemSoundID soundID = 0;
@@ -115,29 +105,15 @@ RCT_EXPORT_METHOD(initAlarm: successCallback:(RCTResponseSenderBlock)callback){
 
 RCT_EXPORT_METHOD(setAlarm:(NSString *)triggerTime
                   title:(NSString *)title
-                  isRetry:(NSString *)isRetry
-                  musicUri:(NSString *)musicUri
                   successCallback:(RCTResponseSenderBlock)successCallback
                   errorCallback:(RCTResponseSenderBlock)errorCallback){
     @try
     {
-//        NSURL *url = [NSURL URLWithString:@"Clock-alarm:"];
-//        if ([[UIApplication sharedApplication] canOpenURL:url]) {
-//            [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
-//        }
-        
-        //得到闹钟在本机中的设置状态，-1为没有此闹钟
         int alarmStatus = [self getAlarmStatus:triggerTime];
-        //强制设置闹钟，更新本机闹钟状态为nil
-        if (isRetry != nil && ![isRetry isEqual: @""]) {
-            [self setAlarm:triggerTime andStatus:nil];
-        }
         
         bool isSettedAlarm = [NSNumber numberWithInt:alarmStatus].boolValue;
-        //闹钟已经设定过了，并且是设置失败了，不再设置此闹钟，直接退出此次设置
         if (alarmStatus != -1)
         {
-            //闹钟已经设置过了，不再重复设置
             if (isSettedAlarm) {
                 NSArray *result = [NSArray arrayWithObjects:@"0", nil];
                 if(successCallback != nil){
@@ -167,33 +143,7 @@ RCT_EXPORT_METHOD(setAlarm:(NSString *)triggerTime
         content.body = [NSString localizedUserNotificationStringForKey:title arguments:nil];
         //content.categoryIdentifier = @"RNAlarmCategory";
         content.categoryIdentifier = triggerTime;
-        
-        musicUri = @"Constellation.m4r";
-        if(musicUri == nil) {
-            content.sound = [UNNotificationSound defaultSound];
-        }else {
-            NSFileManager *fileManage = NSFileManager.defaultManager;
-            
-            NSURL *libraryUrl = [[fileManage URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask] objectAtIndex:0];
-            NSURL *soundDirUrl = [libraryUrl URLByAppendingPathComponent:@"Sounds"];
-            [fileManage createDirectoryAtURL:soundDirUrl withIntermediateDirectories:TRUE attributes:nil error:nil];
-            
-            NSURL *from = [NSURL fileURLWithPath:@"/Library/Ringtones/Constellation.m4r"];
-            NSURL *dest = [soundDirUrl URLByAppendingPathComponent:musicUri];
-            [fileManage copyItemAtURL:from toURL:dest error:nil];
-            
-            content.sound = [UNNotificationSound soundNamed:musicUri];
-        }
-        //   NSTimeInterval time =[triggerTime doubleValue];
-        //
-        //        NSDate *tgTime = [NSDate dateWithTimeIntervalSinceNow:time];
-        
-        
-        
-        //        NSCalendar *gregorian = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
-        //        NSDateComponents *components =[gregorian components:componentFlags fromDate:tgTime];
-        //
-        //        UNCalendarNotificationTrigger *trigger1 = [UNCalendarNotificationTrigger triggerWithDateMatchingComponents:components repeats:NO];
+        content.sound = [UNNotificationSound defaultSound];
         
         // current date
         NSDate *date = [NSDate date];
@@ -207,15 +157,8 @@ RCT_EXPORT_METHOD(setAlarm:(NSString *)triggerTime
             
             //for (int i=0;  i<3; i++) {
             UNTimeIntervalNotificationTrigger *trigger = [UNTimeIntervalNotificationTrigger triggerWithTimeInterval:intervalSeconds repeats:NO];
-            UNTimeIntervalNotificationTrigger *trigger1 = [UNTimeIntervalNotificationTrigger triggerWithTimeInterval: intervalSeconds + 60 repeats:NO];
-            UNTimeIntervalNotificationTrigger *trigger2 = [UNTimeIntervalNotificationTrigger triggerWithTimeInterval: intervalSeconds + 120 repeats:NO];
-            
-            
             
             UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier: [triggerTime stringByAppendingString: @"1"] content:content trigger:trigger];
-            UNNotificationRequest *request1 = [UNNotificationRequest requestWithIdentifier:[triggerTime stringByAppendingString: @"2"] content:content trigger:trigger1];
-            UNNotificationRequest *request2 = [UNNotificationRequest requestWithIdentifier:[triggerTime stringByAppendingString: @"3"] content:content trigger:trigger2];
-            
             
             
             UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
@@ -224,7 +167,7 @@ RCT_EXPORT_METHOD(setAlarm:(NSString *)triggerTime
             
             UNNotificationAction *action = [UNNotificationAction
                                             actionWithIdentifier:@"clear.repeat.action"
-                                            title:@"关闭"
+                                            title:@""
                                             options:UNNotificationActionOptionForeground];
             UNNotificationCategory *category = [UNNotificationCategory
                                                 //categoryWithIdentifier:@"RNAlarmCategory"
@@ -241,21 +184,6 @@ RCT_EXPORT_METHOD(setAlarm:(NSString *)triggerTime
                     @throw error;
                 }
             }];
-            [center addNotificationRequest:request1 withCompletionHandler:^(NSError * _Nullable error) {
-                if(error != nil)
-                {
-                    // NSLog(error.localizedDescription);
-                    @throw error;
-                }
-            }];
-            [center addNotificationRequest:request2 withCompletionHandler:^(NSError * _Nullable error) {
-                if(error != nil)
-                {
-                    // NSLog(error.localizedDescription);
-                    @throw error;
-                }
-            }];
-            
             center.delegate = self;
             //intervalSeconds += 60;
             //}
