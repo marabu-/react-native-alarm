@@ -39,6 +39,17 @@ public class RNALarmCeiver extends BroadcastReceiver {
 
             String title = intent.getStringExtra(RNAlarmConstants.REACT_NATIVE_ALARM_TITLE);
             Uri ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            if (ringtone == null) {
+                // alert is null, using backup
+                ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+                // I can't see this ever being null (as always have a default notification)
+                // but just incase
+                if (ringtone == null) {
+                    // alert backup is null, using 2nd backup
+                    ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                }
+            }
 
             PendingIntent pi = PendingIntent.getActivity(context, 100, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 
