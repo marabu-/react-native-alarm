@@ -41,9 +41,11 @@
     
     NSString *categoryIdentifier = response.notification.request.content.categoryIdentifier;
     NSString *identifier1 = [categoryIdentifier stringByAppendingString:@"1"];
+    NSString *identifier2 = [categoryIdentifier stringByAppendingString:@"2"];
+    NSString *identifier3 = [categoryIdentifier stringByAppendingString:@"3"];
     
-    [center removePendingNotificationRequestsWithIdentifiers:@[identifier1]];
-    [center removeDeliveredNotificationsWithIdentifiers:@[identifier1]];
+    [center removePendingNotificationRequestsWithIdentifiers:@[identifier1,identifier2,identifier3]];
+    [center removeDeliveredNotificationsWithIdentifiers:@[identifier1,identifier2,identifier3]];
     //[audioPlay stop];
     //[center removeAllPendingNotificationRequests];
     //}
@@ -157,8 +159,15 @@ RCT_EXPORT_METHOD(setAlarm:(NSString *)triggerTime
             
             //for (int i=0;  i<3; i++) {
             UNTimeIntervalNotificationTrigger *trigger = [UNTimeIntervalNotificationTrigger triggerWithTimeInterval:intervalSeconds repeats:NO];
+            UNTimeIntervalNotificationTrigger *trigger1 = [UNTimeIntervalNotificationTrigger triggerWithTimeInterval: intervalSeconds + 60 repeats:NO];
+            UNTimeIntervalNotificationTrigger *trigger2 = [UNTimeIntervalNotificationTrigger triggerWithTimeInterval: intervalSeconds + 120 repeats:NO];
+            
+            
             
             UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier: [triggerTime stringByAppendingString: @"1"] content:content trigger:trigger];
+            UNNotificationRequest *request1 = [UNNotificationRequest requestWithIdentifier:[triggerTime stringByAppendingString: @"2"] content:content trigger:trigger1];
+            UNNotificationRequest *request2 = [UNNotificationRequest requestWithIdentifier:[triggerTime stringByAppendingString: @"3"] content:content trigger:trigger2];
+            
             
             
             UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
@@ -184,6 +193,21 @@ RCT_EXPORT_METHOD(setAlarm:(NSString *)triggerTime
                     @throw error;
                 }
             }];
+            [center addNotificationRequest:request1 withCompletionHandler:^(NSError * _Nullable error) {
+                if(error != nil)
+                {
+                    // NSLog(error.localizedDescription);
+                    @throw error;
+                }
+            }];
+            [center addNotificationRequest:request2 withCompletionHandler:^(NSError * _Nullable error) {
+                if(error != nil)
+                {
+                    // NSLog(error.localizedDescription);
+                    @throw error;
+                }
+            }];
+            
             center.delegate = self;
             //intervalSeconds += 60;
             //}

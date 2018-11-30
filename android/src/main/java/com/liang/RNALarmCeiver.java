@@ -24,19 +24,10 @@ import static android.content.Context.NOTIFICATION_SERVICE;
 
 public class RNALarmCeiver extends BroadcastReceiver {
 
-    static MediaPlayer player = new MediaPlayer();
-
-
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        if (intent.getExtras().getBoolean("stopNotification")) {
-            if (player.isPlaying()) {
-                player.stop();
-                player.reset();
-            }
-        } else {
-
+        try {
             String title = intent.getStringExtra(RNAlarmConstants.REACT_NATIVE_ALARM_TITLE);
             Uri ringtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
             if (ringtone == null) {
@@ -65,48 +56,16 @@ public class RNALarmCeiver extends BroadcastReceiver {
             notificationBuilder.setFullScreenIntent(pi, true);
             notificationBuilder.setDeleteIntent(createOnDismissedIntent(context));
             notificationBuilder.setAutoCancel(true);
+            notificationBuilder.setSound(ringtone);
             NotificationManager notificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
             notificationManager.notify(0, notification);
 
-
-            try {
-                player.setDataSource(context, ringtone);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    AudioAttributes.Builder builder = new AudioAttributes.Builder();
-                    AudioAttributes attributes = builder
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .build();
-                    player.setAudioAttributes(attributes);
-                } else {
-                    player.setAudioStreamType(AudioManager.STREAM_ALARM);
-                }
-                player.setLooping(true);
-                player.prepareAsync();
-                player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                    @Override
-                    public void onPrepared(MediaPlayer mp) {
-                        player.start();
-                        new CountDownTimer(50000, 10000) {
-                            public void onTick(long millisUntilFinished) {
-
-                            }
-
-                            public void onFinish() {
-                                if (player.isPlaying()) {
-                                    player.stop();
-                                    player.reset();
-                                }
-                            }
-                        }.start();
-                    }
-                });
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
+
+}
 
     private PendingIntent createOnDismissedIntent(Context context) {
         Intent intent = new Intent(RNAlarmConstants.REACT_NATIVE_ALARM);
