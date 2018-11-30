@@ -42,14 +42,13 @@ public class RNALarmCeiver extends BroadcastReceiver {
                     .setVibrate(new long[]{0, 6000})
                     .setContentTitle(title)
                     .setContentText("");
-
-
-            Notification notification = notificationBuilder.build();
+            
             notificationBuilder.setDefaults(Notification.DEFAULT_ALL);
             notificationBuilder.setFullScreenIntent(pi, true);
             notificationBuilder.setDeleteIntent(createOnDismissedIntent(context));
             notificationBuilder.setAutoCancel(true);
             notificationBuilder.setSound(ringtone);
+            Notification notification = notificationBuilder.build();
             NotificationManager notificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
             notificationManager.notify(0, notification);
 
